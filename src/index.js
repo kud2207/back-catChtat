@@ -19,9 +19,12 @@ app.use(express.json({ limit: "10mb" })); // autorise jusqu’à 10 Mo
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser())
 app.use(cors({
-  origin: "http://localhost:5173", //pour acepter juste les req httpp de cette 
+  origin: [
+    "http://localhost:5173",
+    "https://catchat-5woz.onrender.com"
+  ],
   credentials: true,
-}))
+}));
 
 // Route 
 app.use("/api/auth", authRoutes);
@@ -30,7 +33,7 @@ app.get("/", (req, res) => {
   res.send("Api it's working");
 })
 
- 
+
 
 // Démarrage du serveur
 server.listen(PORT, () => {

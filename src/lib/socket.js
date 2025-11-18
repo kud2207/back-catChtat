@@ -1,50 +1,52 @@
-import { Server } from "socket.io"
-import http from "http"
-import express from "express"
-
+import { Server } from "socket.io";
+import http from "http";
+import express from "express";
 
 const app = express();
-const server = http.createServer(app); //ecoute les req
-const BASE_URL = "http://localhost:5173"
+const server = http.createServer(app);
 
-// pour connecter au client //
+const isProduction = process.env.NODE_ENV === "production";
+const FRONTEND_URL = isProduction
+  ? "https://catchat-5woz.onrender.com"
+  : "http://localhost:5173";
+
 const io = new Server(server, {
-    cors: {
-        origin: [BASE_URL] //quel conection autoriser
-    }
+  cors: {
+    origin: [FRONTEND_URL],
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
-//pour receved msg (donne l’adresse en temps réel user)
+const userSocketMap = {}; // { userId: socketId }
+
+// Fonction utilitaire exportée
 export function getReceiverSocketId(userId) {
-    return userSocketMap[userId]
+  return userSocketMap[userId];
 }
 
-
-const userSocketMap = {} //used to store online users
-
-
-// pour ecouter qui se connecte au server // 
+// Gestion des connexions
 io.on("connection", (socket) => {
+  const userId = socket.handshake.query.userId;
 
-    const userId = socket.handshake.query.userId;
-    if (userId) userSocketMap[userId] = socket.id;
+  if (userId) {
+    userSocketMap[userId] = socket.id;
+    console.log(`✅ User ${userId} connected (socket: ${socket.id})`);
+  }
 
-    //send events to all connected users
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  // Informe tous les clients des utilisateurs en ligne
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
-
-    socket.on("disconnect", () => {
-
-
-        //suprime le user qui n'est pas connecté
-        delete userSocketMap[userId];
-        io.emit("getOnlineUsers", Object.keys(userSocketMap))
-    })
-})
+  socket.on("disconnect", () => {
+    if (userId && userSocketMap[userId] === socket.id) {
+      delete userSocketMap[userId];
+      console.log(`📴 User ${userId} disconnected`);
+      io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    }
+  });
+});
 
 export { io, app, server };
-
-
 
 /**
  * NB
