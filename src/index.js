@@ -24,7 +24,7 @@ app.use(cors({
 }))
 
 // Route 
-app.use("/api/auth", authRoutes);
+//app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
 app.get("/", (req, res) => {
   res.send("Hello World! test is fin");
